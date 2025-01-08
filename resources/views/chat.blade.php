@@ -6,6 +6,35 @@
     <title>Groq Chatbot</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .markdown-content pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+        .markdown-content code {
+            background-color: #f3f4f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+        .markdown-content p {
+            margin: 0.5rem 0;
+        }
+        .markdown-content ul, .markdown-content ol {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        .markdown-content ul {
+            list-style-type: disc;
+        }
+        .markdown-content ol {
+            list-style-type: decimal;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-4 max-w-3xl">
@@ -205,8 +234,10 @@
             const messageBubble = document.createElement('div');
             messageBubble.className = `max-w-[70%] rounded-lg p-3 ${
                 isUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
-            }`;
-            messageBubble.textContent = content;
+            } markdown-content`;
+            
+            // Parse markdown for both user and bot messages
+            messageBubble.innerHTML = marked.parse(content);
             
             messageDiv.appendChild(messageBubble);
             chatMessages.appendChild(messageDiv);

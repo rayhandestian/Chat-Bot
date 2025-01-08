@@ -26,7 +26,7 @@ class GroqService
 
     public function getSystemPrompt()
     {
-        return Session::get('custom_system_prompt', env('GROQ_SYSTEM_PROMPT', 'You are a helpful and knowledgeable AI assistant.'));
+        return Session::get('custom_system_prompt', env('GROQ_SYSTEM_PROMPT', 'You are a helpful and knowledgeable assistant called Groq that will always help the user with their requests.'));
     }
 
     public function setSystemPrompt(?string $prompt)
