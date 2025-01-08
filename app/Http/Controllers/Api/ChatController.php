@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Services\GroqService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ChatController extends Controller
 {
@@ -14,15 +16,7 @@ class ChatController extends Controller
         $this->groqService = $groqService;
     }
 
-    public function index()
-    {
-        $models = $this->groqService->getModels();
-        $currentSystemPrompt = $this->groqService->getSystemPrompt();
-        $hasCustomApiKey = session()->has('custom_api_key');
-        return view('chat', compact('models', 'currentSystemPrompt', 'hasCustomApiKey'));
-    }
-
-    public function sendMessage(Request $request)
+    public function sendMessage(Request $request): JsonResponse
     {
         $request->validate([
             'message' => 'required|string|max:1000',
@@ -34,13 +28,13 @@ class ChatController extends Controller
         return response()->json(['response' => $response]);
     }
 
-    public function clearChat()
+    public function clearChat(): JsonResponse
     {
         $this->groqService->clearHistory();
         return response()->json(['success' => true]);
     }
 
-    public function updateSettings(Request $request)
+    public function updateSettings(Request $request): JsonResponse
     {
         $request->validate([
             'system_prompt' => 'nullable|string|max:1000',

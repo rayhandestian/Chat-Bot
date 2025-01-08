@@ -1,9 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Web\ChatController as WebChatController;
+use App\Http\Controllers\Api\ChatController as ApiChatController;
 
-Route::get('/', [ChatController::class, 'index']);
-Route::post('/chat', [ChatController::class, 'sendMessage']);
-Route::post('/chat/clear', [ChatController::class, 'clearChat']);
-Route::post('/chat/settings', [ChatController::class, 'updateSettings']);
+// Web Routes
+Route::get('/', [WebChatController::class, 'index']);
+
+// API Routes
+Route::post('/chat', [ApiChatController::class, 'sendMessage']);
+Route::post('/chat/clear', [ApiChatController::class, 'clearChat']);
+Route::post('/chat/settings', [ApiChatController::class, 'updateSettings']);
