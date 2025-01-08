@@ -8,14 +8,34 @@ use Illuminate\Support\Facades\Session;
 
 class GroqService
 {
-    private string $apiKey;
-    private string $systemPrompt;
     private string $baseUrl = 'https://api.groq.com/openai/v1';
 
-    public function __construct()
+    public function getApiKey()
     {
-        $this->apiKey = env('GROQ_API_KEY');
-        $this->systemPrompt = env('GROQ_SYSTEM_PROMPT');
+        return Session::get('custom_api_key', env('GROQ_API_KEY'));
+    }
+
+    public function setApiKey(?string $apiKey)
+    {
+        if ($apiKey) {
+            Session::put('custom_api_key', $apiKey);
+        } else {
+            Session::forget('custom_api_key');
+        }
+    }
+
+    public function getSystemPrompt()
+    {
+        return Session::get('custom_system_prompt', env('GROQ_SYSTEM_PROMPT', 'You are a helpful and knowledgeable AI assistant.'));
+    }
+
+    public function setSystemPrompt(?string $prompt)
+    {
+        if ($prompt) {
+            Session::put('custom_system_prompt', $prompt);
+        } else {
+            Session::forget('custom_system_prompt');
+        }
     }
 
     public function getModels()
@@ -23,7 +43,7 @@ class GroqService
         // Cache models for 1 hour to avoid frequent API calls
         return Cache::remember('groq_models', 3600, function () {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Authorization' => 'Bearer ' . $this->getApiKey(),
                 'Content-Type' => 'application/json'
             ])->get($this->baseUrl . '/models');
 
@@ -41,7 +61,7 @@ class GroqService
     {
         if (!Session::has('chat_history')) {
             Session::put('chat_history', [
-                ['role' => 'system', 'content' => $this->systemPrompt]
+                ['role' => 'system', 'content' => $this->getSystemPrompt()]
             ]);
         }
         return Session::get('chat_history');
@@ -72,7 +92,7 @@ class GroqService
         $messages = $this->getMessageHistory();
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Authorization' => 'Bearer ' . $this->getApiKey(),
             'Content-Type' => 'application/json'
         ])->post($this->baseUrl . '/chat/completions', [
             'messages' => $messages,

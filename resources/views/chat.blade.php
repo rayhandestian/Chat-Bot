@@ -12,10 +12,52 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Groq Chatbot</h1>
-                <button id="clear-chat" 
-                        class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
-                    Clear Chat
-                </button>
+                <div class="flex gap-2">
+                    <button id="settings-btn" 
+                            class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
+                        Settings
+                    </button>
+                    <button id="clear-chat" 
+                            class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+                        Clear Chat
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Settings</h3>
+                        <form id="settings-form" class="space-y-4">
+                            <div>
+                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-1">API Key (optional)</label>
+                                <input type="password" 
+                                       id="api-key" 
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:border-blue-500"
+                                       placeholder="Enter your Groq API key"
+                                       value="{{ $hasCustomApiKey ? '********' : '' }}">
+                            </div>
+                            <div>
+                                <label for="system-prompt" class="block text-sm font-medium text-gray-700 mb-1">System Prompt</label>
+                                <textarea id="system-prompt" 
+                                          class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:border-blue-500"
+                                          rows="3">{{ $currentSystemPrompt }}</textarea>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" 
+                                        id="close-settings"
+                                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" 
+                                        class="px-4 py-2 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
             
             <div class="mb-4">
@@ -52,6 +94,54 @@
         const messageInput = document.getElementById('message-input');
         const modelSelect = document.getElementById('model-select');
         const clearChatButton = document.getElementById('clear-chat');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings');
+        const settingsForm = document.getElementById('settings-form');
+
+        // Settings Modal
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.add('hidden');
+            }
+        });
+
+        settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('api-key').value.trim();
+            const systemPrompt = document.getElementById('system-prompt').value.trim();
+
+            try {
+                const response = await fetch('/chat/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey === '********' ? null : apiKey,
+                        system_prompt: systemPrompt
+                    })
+                });
+
+                if (response.ok) {
+                    settingsModal.classList.add('hidden');
+                    chatMessages.innerHTML = '';
+                    appendMessage('Settings updated! Starting a new conversation...', false);
+                }
+            } catch (error) {
+                appendMessage('Failed to update settings. Please try again.', false);
+            }
+        });
 
         function appendMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');

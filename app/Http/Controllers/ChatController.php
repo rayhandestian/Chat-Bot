@@ -17,7 +17,9 @@ class ChatController extends Controller
     public function index()
     {
         $models = $this->groqService->getModels();
-        return view('chat', compact('models'));
+        $currentSystemPrompt = $this->groqService->getSystemPrompt();
+        $hasCustomApiKey = session()->has('custom_api_key');
+        return view('chat', compact('models', 'currentSystemPrompt', 'hasCustomApiKey'));
     }
 
     public function sendMessage(Request $request)
@@ -36,5 +38,23 @@ class ChatController extends Controller
     {
         $this->groqService->clearHistory();
         return response()->json(['success' => true]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'system_prompt' => 'nullable|string|max:1000',
+            'api_key' => 'nullable|string'
+        ]);
+
+        $this->groqService->setSystemPrompt($request->system_prompt);
+        $this->groqService->setApiKey($request->api_key);
+        $this->groqService->clearHistory(); // Clear history when settings change
+
+        return response()->json([
+            'success' => true,
+            'system_prompt' => $this->groqService->getSystemPrompt(),
+            'has_custom_api_key' => session()->has('custom_api_key')
+        ]);
     }
 } 
