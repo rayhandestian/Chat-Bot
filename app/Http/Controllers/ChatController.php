@@ -31,4 +31,10 @@ class ChatController extends Controller
 
         return response()->json(['response' => $response]);
     }
+
+    public function clearChat()
+    {
+        $this->groqService->clearHistory();
+        return response()->json(['success' => true]);
+    }
 } 

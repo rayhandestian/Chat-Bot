@@ -10,7 +10,13 @@
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-4 max-w-3xl">
         <div class="bg-white rounded-lg shadow-lg p-6">
-            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Groq Chatbot</h1>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Groq Chatbot</h1>
+                <button id="clear-chat" 
+                        class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+                    Clear Chat
+                </button>
+            </div>
             
             <div class="mb-4">
                 <label for="model-select" class="block text-sm font-medium text-gray-700 mb-2">Select Model:</label>
@@ -45,6 +51,7 @@
         const chatForm = document.getElementById('chat-form');
         const messageInput = document.getElementById('message-input');
         const modelSelect = document.getElementById('model-select');
+        const clearChatButton = document.getElementById('clear-chat');
 
         function appendMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');
@@ -60,6 +67,25 @@
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+
+        clearChatButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/chat/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (response.ok) {
+                    chatMessages.innerHTML = '';
+                    appendMessage('Chat history cleared. Start a new conversation!', false);
+                }
+            } catch (error) {
+                appendMessage('Failed to clear chat history. Please try again.', false);
+            }
+        });
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
