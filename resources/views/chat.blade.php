@@ -389,9 +389,20 @@
                 const response = await fetch(`/api/chats/${id}`);
                 const data = await response.json();
                 
+                // Clear and display messages in UI
                 chatMessages.innerHTML = '';
                 data.chat.messages.forEach(msg => {
                     appendMessage(msg.content, msg.isUser);
+                });
+
+                // Restore chat history in session
+                await fetch('/chat/restore', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ messages: data.chat.messages })
                 });
                 
                 savedChatsModal.classList.add('hidden');

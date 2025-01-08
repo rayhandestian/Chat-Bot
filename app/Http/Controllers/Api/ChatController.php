@@ -51,4 +51,14 @@ class ChatController extends Controller
             'has_custom_api_key' => session()->has('custom_api_key')
         ]);
     }
+
+    public function restoreHistory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'messages' => 'required|array'
+        ]);
+
+        $this->groqService->restoreHistory($request->messages);
+        return response()->json(['success' => true]);
+    }
 } 

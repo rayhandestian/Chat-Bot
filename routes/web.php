@@ -11,3 +11,4 @@ Route::get('/', [WebChatController::class, 'index']);
 Route::post('/chat', [ApiChatController::class, 'sendMessage']);
 Route::post('/chat/clear', [ApiChatController::class, 'clearChat']);
 Route::post('/chat/settings', [ApiChatController::class, 'updateSettings']);
+Route::post('/chat/restore', [ApiChatController::class, 'restoreHistory']);

@@ -79,6 +79,20 @@ class GroqService
         Session::forget('chat_history');
     }
 
+    public function restoreHistory(array $messages)
+    {
+        $history = [['role' => 'system', 'content' => $this->getSystemPrompt()]];
+        
+        foreach ($messages as $message) {
+            $history[] = [
+                'role' => $message['isUser'] ? 'user' : 'assistant',
+                'content' => $message['content']
+            ];
+        }
+        
+        Session::put('chat_history', $history);
+    }
+
     public function chat(string $message, string $model = null)
     {
         if (!$model) {
