@@ -13,6 +13,14 @@
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Groq Chatbot</h1>
                 <div class="flex gap-2">
+                    <button id="saved-chats-btn" 
+                            class="px-4 py-2 text-sm text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors">
+                        Saved Chats
+                    </button>
+                    <button id="save-chat-btn" 
+                            class="px-4 py-2 text-sm text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors">
+                        Save Chat
+                    </button>
                     <button id="settings-btn" 
                             class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
                         Settings
@@ -21,6 +29,53 @@
                             class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
                         Clear Chat
                     </button>
+                </div>
+            </div>
+
+            <!-- Save Chat Modal -->
+            <div id="save-chat-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Save Chat</h3>
+                        <form id="save-chat-form" class="space-y-4">
+                            <div>
+                                <label for="chat-title" class="block text-sm font-medium text-gray-700 mb-1">Chat Title</label>
+                                <input type="text" 
+                                       id="chat-title" 
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:border-blue-500"
+                                       placeholder="Enter a title for this chat"
+                                       required>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" 
+                                        class="close-modal px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" 
+                                        class="px-4 py-2 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saved Chats Modal -->
+            <div id="saved-chats-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                <div class="relative top-20 mx-auto p-5 border w-[32rem] shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Saved Chats</h3>
+                        <div id="saved-chats-list" class="space-y-2 max-h-96 overflow-y-auto">
+                            <!-- Saved chats will be inserted here -->
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button type="button" 
+                                    class="close-modal px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -209,6 +264,155 @@
             messageInput.disabled = false;
             messageInput.focus();
         });
+
+        // Save Chat Modal
+        const saveChatBtn = document.getElementById('save-chat-btn');
+        const saveChatModal = document.getElementById('save-chat-modal');
+        const saveChatForm = document.getElementById('save-chat-form');
+
+        // Saved Chats Modal
+        const savedChatsBtn = document.getElementById('saved-chats-btn');
+        const savedChatsModal = document.getElementById('saved-chats-modal');
+        const savedChatsList = document.getElementById('saved-chats-list');
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', () => {
+                saveChatModal.classList.add('hidden');
+                savedChatsModal.classList.add('hidden');
+            });
+        });
+
+        // Save Chat
+        saveChatBtn.addEventListener('click', () => {
+            saveChatModal.classList.remove('hidden');
+        });
+
+        saveChatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('chat-title').value.trim();
+            const messages = Array.from(chatMessages.children).map(div => ({
+                isUser: div.querySelector('div').classList.contains('bg-blue-500'),
+                content: div.querySelector('div').textContent
+            }));
+
+            try {
+                const response = await fetch('/api/chats', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ title, messages })
+                });
+
+                if (response.ok) {
+                    saveChatModal.classList.add('hidden');
+                    document.getElementById('chat-title').value = '';
+                    appendMessage('Chat saved successfully!', false);
+                } else {
+                    throw new Error('Failed to save chat');
+                }
+            } catch (error) {
+                appendMessage('Failed to save chat. Please try again.', false);
+            }
+        });
+
+        // Load Saved Chats
+        savedChatsBtn.addEventListener('click', async () => {
+            savedChatsModal.classList.remove('hidden');
+            await loadSavedChats();
+        });
+
+        async function loadSavedChats() {
+            try {
+                const response = await fetch('/api/chats');
+                const data = await response.json();
+                
+                savedChatsList.innerHTML = data.chats.map(chat => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium">${chat.title}</span>
+                        <div class="flex gap-2">
+                            <button onclick="loadChat(${chat.id})" 
+                                    class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors">
+                                Load
+                            </button>
+                            <button onclick="editChatTitle(${chat.id}, '${chat.title}')" 
+                                    class="px-3 py-1 text-sm text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors">
+                                Edit
+                            </button>
+                            <button onclick="deleteChat(${chat.id})" 
+                                    class="px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                savedChatsList.innerHTML = '<p class="text-red-500">Failed to load saved chats</p>';
+            }
+        }
+
+        async function loadChat(id) {
+            try {
+                const response = await fetch(`/api/chats/${id}`);
+                const data = await response.json();
+                
+                chatMessages.innerHTML = '';
+                data.chat.messages.forEach(msg => {
+                    appendMessage(msg.content, msg.isUser);
+                });
+                
+                savedChatsModal.classList.add('hidden');
+            } catch (error) {
+                appendMessage('Failed to load chat. Please try again.', false);
+            }
+        }
+
+        async function editChatTitle(id, currentTitle) {
+            const newTitle = prompt('Enter new title:', currentTitle);
+            if (!newTitle || newTitle === currentTitle) return;
+
+            try {
+                const response = await fetch(`/api/chats/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ title: newTitle })
+                });
+
+                if (response.ok) {
+                    await loadSavedChats();
+                } else {
+                    throw new Error('Failed to update chat title');
+                }
+            } catch (error) {
+                alert('Failed to update chat title. Please try again.');
+            }
+        }
+
+        async function deleteChat(id) {
+            if (!confirm('Are you sure you want to delete this chat?')) return;
+
+            try {
+                const response = await fetch(`/api/chats/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (response.ok) {
+                    await loadSavedChats();
+                } else {
+                    throw new Error('Failed to delete chat');
+                }
+            } catch (error) {
+                alert('Failed to delete chat. Please try again.');
+            }
+        }
     </script>
 </body>
 </html> 
